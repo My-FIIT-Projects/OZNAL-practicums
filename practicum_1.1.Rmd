@@ -30,6 +30,14 @@ Note that the `echo = FALSE` parameter was added to the code chunk to prevent pr
 
 # Practicum 1.1
 
+## Conflicts
+
+```{r}
+conflict_prefer("filter", "dplyr")
+conflict_prefer("lag", "dplyr")
+conflict_prefer("intersect", "dplyr")
+```
+
 ## Libraries
 
 ```{r}
@@ -40,19 +48,12 @@ library(magrittr)
 library(conflicted)
 ```
 
-## Conflicts
-
-```{r}
-  conflict_prefer("filter", "dplyr")
-  conflict_prefer("lag", "dplyr")
-  conflict_prefer("intersect", "dplyr")
-```
-
 ## Loading Data
 
 ```{r}
 # This automatically creates a tibble, which is tidyverse’s modern data frame.
 players <- read_csv("data/players_22.csv")
+#spec(players)
 ```
 
 ## Task Solutions

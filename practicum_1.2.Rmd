@@ -1,0 +1,369 @@
+---
+title: "practicum_1.2"
+output: html_document
+---
+## Conflicts
+
+```{r}
+conflict_prefer("filter", "dplyr")
+conflict_prefer("lag", "dplyr")
+conflict_prefer("intersect", "dplyr")
+```
+
+## Libraries
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(magrittr)
+library(conflicted)
+```
+
+## Load Data
+
+```{r}
+players <- read_csv("data/players_22.csv")
+View(players)
+#spec(players)
+```
+
+## Category Definition
+
+### Position groups
+
+```{r}
+# Offense positions
+offense <- c("LF", "CF", "RF", "LW", "RW", "LS", "ST", "RS")
+
+# Defense positions
+defense <- c("LWB", "RWB", "LCB", "CB", "RCB", "LB", "RB")
+
+# Midfield positions
+midfield <- c("LM", "LAM", "CM", "RM", "RAM", "CAM", "CDM", "DM", "LDM", "RDM")
+
+# Goalkeeper
+goalkeeper <- c("GK")
+```
+
+### Category Allocation
+
+```{r}
+# players <- players %>%
+#   mutate(
+#     position_group = case_when(
+#       player_positions %in% offense ~ 'Offense',
+#       player_positions %in% midfield ~ 'Midfield',
+#       player_positions %in% defense ~ 'Defense',
+#       player_positions %in% goalkeeper ~ 'Goalkeeper',
+#       TRUE ~ 'Other'
+#     )
+#   )
+
+players <- players %>%
+  separate_rows(player_positions, sep = ",\\s*") %>%
+  mutate(
+    position_group = case_when(
+      player_positions %in% offense ~ "Offense",
+      player_positions %in% midfield ~ "Midfield",
+      player_positions %in% defense ~ "Defense",
+      player_positions %in% goalkeeper ~ "Goalkeeper",
+      TRUE ~ "Other"
+    )
+  )
+```
+
+### Visualization
+
+```{r}
+library(ggplot2)
+
+ggplot(players, aes(x = position_group, fill = position_group)) +
+  geom_bar() +
+  theme_minimal() +
+  labs(title = "FIFA 2022 Players by Position Group", x = "Position Group", y = "Number of Players")
+```
+
+
+## Are left-footed players more engaged in offensive positions
+
+### Splitting data
+
+Let's first split the whole data into left and right-footers.
+
+```{r}
+left_footed <- players %>%
+  filter(preferred_foot == "Left")
+
+right_footed <- players %>%
+  filter(preferred_foot == "Right")
+
+cat("Counts\n")
+
+cat("Left: ", nrow(left_footed), "\n")
+cat("Right: ", nrow(right_footed), "\n")
+
+#left_footed %>%
+  #count(position_group)
+```
+The right footers are more represented in the data.
+
+### Are left-footers more offensive?
+
+
+```{r}
+left_prop <- left_footed %>%
+  #filter(position_group %in% c("Offense", "Defense")) %>%
+  count(position_group) %>%
+  mutate(
+    proportion = n / sum(n),
+    foot = "Left"
+  )
+
+right_prop <- right_footed %>%
+  #filter(position_group %in% c("Offense", "Defense")) %>%
+  count(position_group) %>%
+  mutate(
+    proportion = n / sum(n),
+    foot = "Right"
+  )
+
+comparison <- bind_rows(left_prop, right_prop)
+comparison
+```
+
+Right-footed players are proportionally almost twice as likely to play offensive positions compared to left-footed players in this dataset. So the data does not support the idea that left-footed players are more frequently assigned to offensive roles.
+
+This defense proportions show that left-footed players are actually more frequently found in defensive roles than right-footed players.
+
+For goalkeepers, this large difference is expected because most goalkeepers are right-footed, and foot preference matters less for that position.
+
+### Comparative Visualization
+
+We can visualize this using a barplot.
+
+```{r}
+comparison %>%
+  ggplot(aes(x = position_group, y = proportion, fill = foot)) +
+  geom_col(position = "dodge") +
+  labs(
+    title = "Offensive vs Defensive Positions by Preferred Foot",
+    x = "Position Group",
+    y = "Proportion of Players",
+    fill = "Preferred Foot"
+  ) +
+  theme_minimal()
+```
+### Conclusion
+
+Although famous attacking players like Lionel Messi, Arjen Robben, and Gareth Bale contribute to the perception that left-footed players dominate offensive roles, the dataset suggests otherwise. When looking at proportional representation, right-footed players are actually more likely to occupy offensive positions (11.6%) than left-footed players (6.5%).
+
+
+## Market Value Analysis
+
+### Splitting data
+
+```{r}
+players <- players %>%
+  mutate(
+    player_group = case_when(
+      preferred_foot == "Left" & position_group == "Offense" ~ "Left Offensive",
+      preferred_foot == "Right" & position_group == "Offense" ~ "Right Offensive",
+      preferred_foot == "Left" ~ "Left Other",
+      TRUE ~ "Right Other"
+    )
+  )
+players <- players %>%
+  mutate(
+    player_group = factor(
+      player_group,
+      levels = c(
+        "Left Offensive",
+        "Right Offensive",
+        "Left Other",
+        "Right Other"
+      )
+    )
+  )
+```
+
+### Summary
+
+```{r}
+players %>%
+  group_by(player_group) %>%
+  summarise(
+    avg_value = mean(value_eur, na.rm = TRUE),
+    avg_wage = mean(wage_eur, na.rm = TRUE),
+    avg_release = mean(release_clause_eur, na.rm = TRUE),
+    n_players = n()
+  )
+```
+### Market Value Comparison
+Market values vary from thousands to hundreds of millions, so log scale makes patterns clearer.
+
+```{r}
+players %>%
+  # filter(player_group %in% c("Left Offensive","Right Offensive")) %>%
+  ggplot(aes(x = player_group, y = value_eur, fill = player_group)) +
+  geom_boxplot() +
+  scale_y_log10() + 
+  labs(
+    title = "Market Value of Offensive Players by Preferred Foot",
+    x = "Player Group",
+    y = "Market Value (EUR)"
+  ) +
+  theme_minimal()
+
+
+```
+### Wage Comparison
+
+```{r}
+
+players %>%
+  # filter(player_group %in% c("Left Offensive","Right Offensive")) %>%
+  ggplot(aes(x = player_group, y = wage_eur, fill = player_group)) +
+  geom_boxplot() +
+    scale_y_log10() +
+  labs(
+    title = "Wages of Offensive Players by Preferred Foot",
+    x = "Player Group",
+    y = "Weekly Wage (EUR)"
+  ) +
+  theme_minimal()
+```
+### Transfer Comparison
+
+```{r}
+players %>%
+  # filter(player_group %in% c("Left Offensive","Right Offensive")) %>%
+  ggplot(aes(x = player_group, y = release_clause_eur, fill = player_group)) +
+  geom_boxplot() +
+    scale_y_log10() +
+  labs(
+    title = "Release Clauses of Offensive Players by Preferred Foot",
+    x = "Player Group",
+    y = "Release Clause (EUR)"
+  ) +
+  theme_minimal()
+```
+### Evaluation
+
+The exploratory analysis shows that left-footed offensive players tend to have slightly higher market values and wages compared to other groups. Attributes like *Wage* and *release_clause_eur* were noticably higher than those of right-footed offensive players.
+
+However, when looking at the number of players in each category, the dataset shows that there are far more right-footed offensive players (1704) than left-footed ones (296). This indicates that while left-footed offensive players may be more valuable on average, they are not more commonly engaged in offensive positions overall.
+
+## Potential of Left-footed Players
+
+### Filtering young players
+
+We considered young players to be those below age of 23.
+
+```{r}
+young_players <- players %>%
+  filter(age <= 23)
+```
+
+### Average Potential for Each group
+
+Young left-footed players reach higher potential and value than the right-footers.
+
+```{r}
+young_players %>%
+  group_by(preferred_foot) %>%
+  summarise(
+    avg_potential = mean(potential, na.rm = TRUE),
+    avg_value = mean(value_eur, na.rm = TRUE),
+    n_players = n()
+  )
+```
+
+### Visualizing Distibutions
+
+Let's visualize it via boxplots.
+
+```{r}
+young_players %>%
+  ggplot(aes(x = preferred_foot, y = potential, fill = preferred_foot)) +
+  geom_boxplot() +
+  labs(
+    title = "Potential of Young Players by Preferred Foot",
+    x = "Preferred Foot",
+    y = "Potential Rating"
+  ) +
+  theme_minimal()
+```
+Again, boxplots confirm the higher potential of left-footed players.
+
+### Potential vs age
+
+Here we ask a question: *Do left-footed players reach highger potential at young ages than right-footed players?*
+
+```{r}
+young_players %>%
+  ggplot(aes(x = age, y = potential, color = preferred_foot)) +
+  geom_point(alpha = 0.5) +
+  labs(
+    title = "Potential of Young Players by Age and Preferred Foot",
+    x = "Age",
+    y = "Potential Rating"
+  ) +
+  theme_minimal()
+```
+
+The scatterplot shows the left-footed players often appear at the topp of potential but they dont always win (for instance at age 18 it is the right-footed player that has the greatest potential).
+
+### Potential vs. Market Value
+If left-footed players cluster at higher potential and value, that supports the idea that they are valuable investments.
+
+```{r}
+young_players %>%
+  ggplot(aes(x = potential, y = value_eur, color = preferred_foot)) +
+  geom_point(alpha = 0.5) +
+  scale_y_log10() +
+  labs(
+    title = "Market Value vs Potential of Young Players",
+    x = "Potential",
+    y = "Market Value (log EUR)"
+  ) +
+  theme_minimal()
+```
+This scatterplot shows that left-footed players scatter at higher potential & value levels more than the right-footed players although they dont dominate much.
+
+### Evaluation
+
+ Left-footed players appear to have slightly higher potential and market value on average, which may reflect their rarity and tactical versatility in football. However, the differences are relatively small and the distributions largely overlap, suggesting that being left-footed alone does not guarantee superior development potential. Instead, it may simply offer a small strategic advantage that makes such players slightly more attractive investments in the football market.
+
+## Statistical Test
+
+### Null hypothesis (H₀):
+
+The proportion of left-footed players in offensive positions is equal to the proportion of right-footed players in offensive positions.
+
+### Alternative hypothesis (H₁):
+The proportion of left-footed players in offensive positions is different (or higher) than right-footed players.
+
+```{r}
+tbl <- table(
+  players$preferred_foot,
+  players$position_group == "Offense"
+)
+
+chisq.test(tbl)
+```
+### Evaluation
+
+The p-value is extremely small, much less than 0.05. This rejects the null hypothesis that left-footed and right-footed players are equally likely to occupy offensive positions.
+
+## Final Conclusion
+ 
+The analysis of position distributions does not support the hypothesis. When comparing proportions within each group, right-footed players are more frequently represented in offensive positions than left-footed players. In contrast, left-footed players appear more often in defensive roles, suggesting that their rarity may lead teams to deploy them strategically in positions where natural left-foot orientation is tactically advantageous, such as left-back or left center-back.
+
+However, the economic analysis reveals a different pattern. Left-footed offensive players have higher average market values, wages, and release clauses compared to their right-footed counterparts. This indicates that although left-footed players are not more commonly placed in attacking positions, those who do play in these roles tend to be valued more highly in the football market.
+
+The analysis of young players' potential provides further insight. Young left-footed players show slightly higher average potential ratings and market values than right-footed players. Visualizations suggest that left-footed players appear somewhat more frequently among the highest-potential individuals, although the difference is modest and there is significant overlap between groups. This indicates that left-footed players may offer slightly stronger investment potential, but the advantage is not substantial.
+
+The formal Chi-squared test showed that left-footed players are less likely to be offensive than right-footed players (Chi-squared p < 2.2e-16).
+
+Overall, the findings only partially support the original hypothesis.
