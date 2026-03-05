@@ -1,0 +1,385 @@
+---
+title: "practicum_1.1"
+output: html_document
+date: "2026-03-04"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+# Practicum 1.1
+
+## Libraries
+
+```{r}
+library(dplyr)
+library(readr)
+library(tibble)
+library(magrittr)
+library(conflicted)
+```
+
+## Conflicts
+
+```{r}
+  conflict_prefer("filter", "dplyr")
+  conflict_prefer("lag", "dplyr")
+  conflict_prefer("intersect", "dplyr")
+```
+
+## Loading Data
+
+```{r}
+# This automatically creates a tibble, which is tidyverse’s modern data frame.
+players <- read_csv("data/players_22.csv")
+```
+
+## Task Solutions
+
+### Task 2
+
+#### Number of rows and columns
+
+```{r}
+dim(players)
+nrow(players)
+ncol(players)
+```
+
+#### Check if Data is labeled or unlabeled
+
+Labeled data → has a target column for prediction/classification.
+
+It contains columns like overall, value_eur, rating, or position → it’s labeled for predictive tasks.
+
+```{r}
+colnames(players)
+```
+
+#### Check if data is Homogenous or Heterogenous
+
+Data contains various data types for instance *short_name* is of type chr wherease overall is of type num.
+
+```{r}
+spec(players)
+```
+
+#### Can Tibble Be Replaced With a Matrix or Array?
+
+Both Matrix and Array require homogenous data. In previous section we found out the player data contains various data thus cannot be replaced with a matrix or array which also requires data to be multidimensional.
+
+### Task 3
+
+```{r}
+
+# sapply -> iterates over players' columns and applies class function
+# class determines the type of an object
+
+sapply(players, class)
+
+```
+
+### Task 4 - PLayers with complete records
+
+We used complete.cases() along with sum() to determine the count of players with complete records (rows where each column has a value). We **got 0 complete rows** which is very likely for fifa dataset because there are some missing values for almost every player.
+
+This can be explained by the fact that dataset contains many attributes that are only relevant for certain players, such as:
+
+-   **goalkeeper attributes** (goalkeeping_diving, goalkeeping_kicking, etc.)
+-   **loans** (club_loaned_from)
+-   **tags** (player_tags)
+-   **ids** (nation_team_id)
+
+```{r}
+# complete.cases returns logical vector where each value indicates
+# whether a player has complete record
+
+# sum only includes players with value TRUE
+incomplete_records_sum <- sum(complete.cases(players))
+
+percent <- mean(complete.cases(players)) * 100
+
+incomplete_records_sum
+percent
+```
+
+```{r}
+
+#colSums(is.na(players))
+
+#res <- is.na(players)
+
+# 
+# colSums is equivivalent to sapply(players, function(x) sum(is.na(x)))
+head(sort(colSums(is.na(players)), decreasing = TRUE), 10)
+
+# we can also use
+# colSums(is.na(players))
+
+```
+
+### Task 5 - Duplicates
+
+#### Duplicate records
+
+A **duplicate record** means an entire row is identical to another row.
+
+```{r}
+# duplicated() checks whether elements of a vector are identical to earlier elements.
+sum(duplicated(players))
+```
+
+#### Duplicate columns
+
+R has no direct built-in function for this. We can, however, simply transpose the dataframe and use duplicated() again.
+
+```{r}
+
+#sum(duplicated(as.list(players)))
+sum(duplicated((t(players))))
+
+# other solution
+# convert players into list, which is a collections of columns
+#sum(duplicated(as.list(players)))
+```
+
+### Task 6
+
+#### Column Types
+
+```{r}
+numeric_cols <- sapply(players, is.numeric)
+char_cols <- sapply(players, is.character)
+factor_cols <- sapply(players, is.factor)
+```
+
+#### Range for numeric columns
+
+```{r}
+
+numeric_ranges <- sapply(players[numeric_cols], range, na.rm = TRUE)
+numeric_ranges
+```
+
+#### Categorical columns
+
+```{r}
+library(dplyr)
+library(tidyr)
+
+# drop cols with high cardinality
+# we keep players unless they are character and they contain > 100 disctinct values
+players_clean <- players %>%
+  select(where(~ is.character(.) &&  n_distinct(.) < 100 ))
+
+#char_values <- sapply(players_clean, unique)
+# we want to print the char columns ordered by cardinality
+# across(everything(), n_distinct) applies the function n_distinct() to every column of players_clean.
+# n_distinct() counts how many unique values each column has.
+# summarise() reduces the dataset to one row (unique value counts for each col)
+
+players_clean %>%
+  summarise(across(everything(), n_distinct)) %>%
+  pivot_longer(everything()) %>%
+  arrange(value)
+
+char_counts <- sort(sapply(players_clean, n_distinct))
+char_values <- lapply(players_clean[names(char_counts)], unique)
+char_values
+
+#char_values
+
+```
+
+### Task 7
+
+We can use *View* function to preview the data and check the columns.
+
+```{r}
+View(players)
+```
+
+The first half of the dataset consits of the following columns:
+
+1)  **personal info** (name, age, dob, club_name, etc.)
+2)  **physical traits** (weight, height, body_type, etc.)
+3)  **club info** (club_name, club_joined, etc.)
+4)  **nation info** (nation name, nation position, etc.)
+5)  **overall ratings** (overall, potential)
+
+The second half of the dataset consists of columns representing the more detailed **skill stats** (shooting, passing, skill_volley, etc.).
+
+**Player performance metrics** are presented via overall ratings, skill stats and goalkeeper stats. These metrics are generally on a 0–100 scale.
+
+**Non-informative columns** are those of high cardinality and dates like *player_id*, *dob*, *club_team_id*, etc.
+
+#### Rearranging data
+
+1.  **Identifiers & metadata** (sofifa_id, long_name, short_name, age)
+2.  **Categorical descriptive info** (nationality, club_name, club_position, etc.)
+3.  **Numeric performance metrics** (overall, potential, pace, dribbling, etc.)
+4. **High-cardinality or non-informative columns** (we can also remove them completely)
+
+### Task 8
+
+```{r}
+
+#conflict_prefer("filter", "dplyr")
+
+top_player <- players %>%
+  filter(overall == max(overall, na.rm = TRUE))
+
+top_player %>%
+  select(long_name, club_name, club_position, overall, potential, value_eur, wage_eur, preferred_foot) %>%
+  mutate(across(everything(), as.character)) %>%
+  pivot_longer(
+    cols = everything(),
+    names_to = "attribute",
+    values_to = "value"
+  )
+```
+
+### Task 9
+
+```{r}
+# first select top 100 players by overall score
+
+top100 <- players %>%
+  arrange(desc(overall)) %>%
+  head(100)
+
+# count left and right-footed players
+
+summary_left_foot <- top100 %>%
+  group_by(preferred_foot) %>%
+  summarise(
+    count = n(),
+    proportion = round(n() / nrow(top100), 2)
+  ) %>%
+  arrange(desc(count))
+
+summary_left_foot
+```
+
+### Task 10
+
+From the overall average results we can see that left-footed players have slightly higher overall and thus are more talented than their right-footed counterparts althought left-footed players are underrepresented.
+
+```{r}
+overall_avg <- players %>%
+  group_by(preferred_foot) %>%
+  summarise(
+    overall_avg = mean(overall, na.rm = TRUE)
+  ) %>%
+  arrange(desc(overall_avg))
+
+overall_avg
+```
+
+### Task 11
+
+```{r}
+
+youngest_elite_player <- players %>%
+  select(short_name, overall, dob) %>%
+  filter(overall >= 80) %>%
+  arrange(dob) %>%
+  head(1)
+
+youngest_elite_player
+```
+
+### Task 12
+
+```{r}
+
+#table(players$preferred_foot)
+
+hidden_gems <- players %>%
+  select(short_name, age, value_eur, potential, preferred_foot) %>%
+  filter(preferred_foot == 'Left', age < 35) %>%
+  arrange(value_eur, desc(potential)) %>%
+  head(n = 5)
+
+hidden_gems
+```
+
+### Task 13 - Left-footed players
+
+#### The best dribbler
+
+```{r}
+best_dribbler <- players %>%
+  select(short_name, dribbling, preferred_foot) %>%
+  filter(preferred_foot == 'Left') %>%
+  arrange(desc(dribbling)) %>%
+  head(n = 1)
+
+best_dribbler
+```
+
+#### Best shooters
+
+```{r}
+best_shooters <- players %>%
+  filter(shooting >= 85, preferred_foot == 'Left') %>%
+  summarise(best_left_footed_shooters = n())
+
+best_shooters
+```
+
+#### Best bender
+
+```{r}
+best_bender <- players %>%
+  select(short_name, skill_curve, preferred_foot) %>%
+  filter(preferred_foot == 'Left') %>%
+  arrange(desc(skill_curve)) %>%
+  head(n = 1)
+
+best_bender
+```
+
+#### Fastest player
+
+```{r}
+fastest_player <- players %>%
+  filter(preferred_foot == 'Left') %>%
+  slice_max(pace, n = 1) %>%
+  select(long_name, club_name, pace)
+
+fastest_player
+```
+
+#### Distribution skill attributes
+
+```{r}
+players %>%
+  filter(preferred_foot == "Left") %>%
+  summarise(
+    dribbling_avg = mean(dribbling, na.rm = TRUE),
+    shooting_avg = mean(shooting, na.rm = TRUE),
+    pace_avg = mean(pace, na.rm = TRUE)
+  )
+```

@@ -1,0 +1,165 @@
+---
+title: "R_summary"
+output: html_document
+date: "2026-03-04"
+---
+
+```{r setup, include=FALSE}
+# knitr is a package that processes R makrdown
+# echo = TRUE shows code in output, FALSE - code runs but does not display
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+# `cars` is a built-in R dataset
+# summary(cars) computes statistical summary
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+# pressure = built-in dataset
+# echo=FALSE was added to prevent printing of the R code that generated the plot.
+
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+# R Basics
+
+## Fundamentals
+
+### Variables
+
+```{r}
+x <- 5
+y <- 10
+z <- x + y
+```
+
+### Vectors
+
+```{r}
+numbers <- c(1, 2, 3, 4)
+```
+
+### Basic Math
+
+```{r}
+mean(numbers)
+sum(numbers)
+length(numbers)
+```
+
+### Data Frames
+
+```{r}
+df <- data.frame(
+  name = c("A", "B", "C"),
+  age = c(20, 25, 30)
+)
+
+df_tibble = tibble(name = c("A", "B"), age = c(20, 25))
+df_tibble
+```
+
+#### Access Column
+
+```{r}
+
+sum(df$age)
+```
+
+### Functions
+
+```{r}
+add_two <- function(x) {
+  return(x + 2)
+}
+```
+
+```{r}
+added <- add_two(5)
+added
+```
+
+## R Studio
+
+### Remove All Environment Variables
+
+```{r}
+rm(list = ls())
+```
+
+## Modern libraries
+
+1)  **tidyverse** - data manipulation, visualization and transformation, built around tibbles, verbs from dplyr, the layered grammar of ggplot2, powerful functional programming of purr.
+
+2)  **tidymodels** - modelling, extension to machine learning, grammar for preprocessing, resampling, tuning, and evaluating models.
+
+If data science is building a house:
+
+- tidyverse → preparing bricks, cutting wood, organizing materials
+- tidymodels → assembling the house structure
+
+## tidyverse
+
+Within the tidyverse, you will work with a unified syntax for data manipulation, visualization, and transformation, built around tibbles, verbs from dplyr, the layered grammar of ggplot2, and the powerful functional programming tools of purrr. This ecosystem replaces the fragmented patterns of base R with a consistent, human‑readable workflow, freeing you from the notorious square‑bracket indexing [ ] and [[ ]] that often frustrate beginners.
+
+### Toolset
+
+#### Data Exploration
+
+Examine features to uncover patterns, detect anomalies, and identify signals relevant for modeling.
+
+Data exploration involves examining the data to understand its structure, distribution and relationships between variables (features).
+
+**Packages**: *dplyr, tidyr, reshape2, tibble, data.table, magrittr*
+
+- **dplyr**, which implements a grammar of data manipulation, providing a consistent set of verbs to solve common data manipulation challenges. Python alternatives to dplyr include pandas, siuba, or dfply.
+- **tidyr** will help you to format your data according to the tidy principles, where each variable goes in a column, and each column is a variable. Many tidyr tools are implemented within pandas in Python.
+- **purrr** package will automate many tasks with functional programming, 
+
+- **magrittr** package allows you to combine pieces of code into clean, linear workflows. This ensures sufficient code clarity to understand the processes, and you can insert or remove steps without breaking the workflow.
+
+#### Data Visualization
+Visual representations of data, such as charts, graphs, and dashboards, help users quickly grasp complex information. Interactive visualizations enable users to manipulate data and observe the effects of different parameters in real time.
+
+- **ggplot2** is a powerful system for declarative way of creating graphics based on The Grammar of Graphics. It allows you to build complex and multi-layered plots through a structured syntax. This approach makes it easy to produce aesthetically pleasing and informative visualizations.
+- **Plotly** is a versatile library for creating interactive, web-based graphics in Python, R, and other languages. It allows users to build interactive visualizations effortlessly, leveraging the principles of The Grammar of Graphics and ggplot2 objects created in the process.
+- **patchwork** library in R is designed to make it incredibly simple to combine multiple ggplot2 plots into a single cohesive graphic. It allows users to arrange plots in various layouts using intuitive operators like +, |, and /. This package is particularly useful for creating complex plot compositions without the need for extensive coding.
+
+
+## tidymodels
+
+### Toolset
+
+For modelling, the tidymodels framework extends these principles to machine learning, offering a tidy grammar for preprocessing, resampling, tuning, and evaluating models.
+
+#### Data Analysis
+
+This step involves applying statistical and analytical techniques to the data to identify patterns, correlations, and trends. 
+
+- **rsample** split data, wow data is divided
+
+- **parsnip** what model you use
+
+- **recipes** how data is transformed
+
+- **workflows** allows you to bundle together your pre-processing, modeling, and post-processing requests. For instance, if you have a recipe and a parsnip model, these can be combined into a workflow.
+
+## Reporting
+
+- **R Markdown** allows you to combine R code, plots, and narrative text in a single file. You can easily generate reports, presentations, and dashboards. R Markdown is well integrated within R studio.
+
+- **Shiny** is an R package that lets you create web applications with interactive user interfaces. You can embed Shiny apps directly into R Markdown documents, making them even more interactive. Interactive documents ensure reproducibility by capturing both code and results. Readers can explore data, modify parameters, and see immediate updates in visualizations.
