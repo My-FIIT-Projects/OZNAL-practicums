@@ -1,0 +1,113 @@
+---
+title: "practicum_1.3"
+output: html_document
+---
+
+## Conflicts
+
+```{r}
+library(conflicted)
+
+conflict_prefer("filter", "dplyr")
+conflict_prefer("lag", "dplyr")
+conflict_prefer("intersect", "dplyr")
+```
+
+## Libraries
+
+```{r}
+library(dplyr)
+library(readr)
+library(tibble)
+library(magrittr)
+library(stringr)
+```
+
+## Load Data
+
+```{r}
+players <- read_csv("data/fifa21_raw_data.csv")
+# View(players)
+spec(players)
+```
+
+## Preprocessing
+
+### Height & Weight -> Numeric
+
+```{r}
+class(players$Height)
+class(players$Weight)
+
+head(players$Height)
+head(players$Weight)
+
+# converting height to cm
+players <- players %>%
+  mutate(
+    feet = as.numeric(str_extract(Height, "^[0-9]+")),
+    inches = as.numeric(str_extract(Height, "(?<=')[0-9]+")),
+    Height_cm = round((feet * 30.48) + (inches * 2.54), 1)
+  )
+
+# converting weight to kilogram
+
+players <- players %>%
+  mutate(
+    Weight_lbs = as.numeric(str_remove(Weight, "lbs"))
+  )
+
+players <- players %>%
+  mutate(
+    Weight_kg = round(Weight_lbs * 0.453592, 1)
+  )
+
+cat("Height\n")
+summary(players$Height_cm)
+
+cat("\n")
+
+cat("Weight\n")
+summary(players$Weight_kg)
+```
+
+### Value, Wage & Release Clause -> Numeric
+
+```{r}
+
+
+
+cat("Value: ", head(players$Value), "\n")
+cat("Wage: ", head(players$Wage), "\n")
+cat("Release Clause: ", head(players$`Release Clause`), "\n")
+
+# function to convert the currency strings
+
+convert_currency <- function(x) {
+  # clean invalid characters
+  x <- gsub("€", "", x)
+  
+  ifelse(grepl("M", x),
+         as.numeric(gsub("M", "", x)) * 1e6,
+         ifelse(grepl("K", x),
+                as.numeric(gsub("K", "", x)) * 1e3,
+                as.numeric(x)))
+}
+
+# apply to columns
+# players$Value <- convert_currency(players$Value)
+# players$Wage <- convert_currency(players$Wage)
+# players$`Release Clause` <- convert_currency(players$`Release Clause`)
+players <- players %>%
+  mutate(
+    across(c(Value, Wage, `Release Clause`), convert_currency)
+  )
+
+cat("Value\n")
+summary(players$Value)
+cat("Wage\n")
+summary(players$Wage)
+cat("Release Clause\n")
+summary(players$`Release Clause`)
+
+```
