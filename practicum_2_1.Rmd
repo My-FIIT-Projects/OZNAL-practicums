@@ -1,0 +1,234 @@
+---
+title: "practicum_2_1"
+output: html_document
+---
+
+# Practicum 2.1
+
+## Libraries
+
+```{r}
+library(tidyverse)
+library(tidymodels)
+```
+
+## Loading Dataset
+
+```{r}
+players <- read_csv("./data/players_22.csv")
+# View(players)
+```
+
+## EDA
+
+### Predictors
+
+```{r}
+
+
+# removed from selected -> pace, passing, skill_dribbling, skill_curve, dribbling, skill_long_passing, skill_ball_control
+# attacking_finishing, attacking_volleys  (mainly for high collinearity)
+
+# removed from selected -> defending - low collinearity with target
+
+
+predictors <- c('skill_dribbling', 'skill_curve', 'pace', 'shooting', 'passing',
+                'dribbling', 'defending', 'attacking_crossing', 'attacking_finishing',
+                'attacking_heading_accuracy', 'attacking_short_passing', 'attacking_volleys')
+
+selected_predictors <- c('attacking_heading_accuracy', 'attacking_short_passing', 'shooting', 'attacking_crossing', 'skill_fk_accuracy')
+extra_columns <- c('player_positions')
+
+target <- c('value_eur')
+
+columns <- append(selected_predictors, target)
+columns <- append(columns, extra_columns)
+
+players_eda <- players[columns]
+
+```
+
+### Missing Values
+
+```{r}
+#colSums(is.na(players_eda[, c(selected_predictors, target)]))
+complete_cases <- complete.cases(players_eda)
+table(complete_cases)
+cat("There are", mean(!complete_cases), "% incomplete observations!")
+
+```
+```{r}
+players_eda <- players_eda %>%
+  filter(complete.cases(across(all_of(c(selected_predictors, target)))))
+```
+
+### Player Positions
+
+```{r}
+offense <- c("LF", "CF", "RF", "LW", "RW", "LS", "ST", "RS")
+
+# Defense positions
+defense <- c("LWB", "RWB", "LCB", "CB", "RCB", "LB", "RB")
+positions <- c(offense, defense)
+
+row_before <- nrow(players_eda)
+
+players_eda <- players_eda %>%
+  separate_rows(player_positions, sep = ", ") %>%
+  filter(player_positions %in% positions)
+
+row_after <- nrow(players_eda)
+# 4. Check the difference
+rows_removed <- row_before - row_after
+print(paste("Rows removed:", rows_removed))
+```
+
+### Distributions
+
+```{r}
+plots <- map(selected_predictors, function(var) {
+  ggplot(players_eda, aes(x = .data[[var]])) +
+    geom_density(fill = "steelblue", alpha = 0.6) +
+    theme_minimal() +
+    labs(
+      title = var,
+      x = "Value",
+      y = "Density"
+    )
+})
+library(patchwork)
+
+
+wrap_plots(plots)
+
+```
+
+
+### Outliers
+
+#### Univariate
+
+```{r}
+# Create boxplots for each predictor
+boxplots <- map(selected_predictors, function(var) {
+  ggplot(players_eda, aes(y = .data[[var]])) +
+    geom_boxplot(fill = "tomato", alpha = 0.6, outlier.colour = "red") +
+    theme_minimal() +
+    labs(
+      title = var,
+      y = "Value"
+    ) +
+    coord_flip()  # optional: horizontal orientation makes it easier to read
+})
+
+wrap_plots(boxplots, ncol = 3)
+```
+
+#### Bivariate
+
+```{r}
+pairs(
+  players_eda[, append(selected_predictors, target)],
+  upper.panel = NULL
+)
+```
+
+
+
+```{r}
+# Generate scatterplots of predictors vs target
+scatterplots <- map(selected_predictors, function(var) {
+  ggplot(players_eda, aes(x = .data[[var]], y = .data[[target]])) +
+    geom_point(alpha = 0.5, color = "steelblue") +
+    geom_smooth(method = "loess", color = "red", se = TRUE) +  # smooth curve (captures linear/nonlinear)
+    theme_minimal() +
+    labs(
+      title = paste(var),
+      x = var,
+      y = target
+    )
+})
+
+
+# Combine all scatterplots in a grid
+wrap_plots(scatterplots, ncol = 3)
+```
+
+### Correlations
+
+```{r}
+# Compute correlations
+# Calculate correlations between predictors and target
+# Compute correlation matrix
+cor_matrix <- players_eda %>%
+  select(all_of(append(selected_predictors, target))) %>%
+  cor(use = "complete.obs")  # ignore NA values
+
+# Convert to long format for ggplot
+cor_long <- as.data.frame(cor_matrix) %>%
+  rownames_to_column(var = "row") %>%
+  pivot_longer(-row, names_to = "column", values_to = "correlation")
+
+# Full correlation heatmap
+ggplot(cor_long, aes(x = column, y = row, fill = correlation)) +
+  geom_tile(color = "white") +
+  geom_text(aes(label = round(correlation, 2)), size = 3) +
+  scale_fill_gradient2(low = "blue", mid = "white", high = "red", midpoint = 0) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    axis.title = element_blank()
+  ) +
+  labs(
+    title = "Full Correlation Matrix of Predictors and Target"
+  )
+```
+
+### Recommended preprocessing
+
+#### Outliers
+
+During EDA, both univariate and bivariate outliers were detected. Since linear and polynomial regression models are sensitive to extreme values due to the squared error loss function, preprocessing techniques such as logarithmic transformation or winsorization may be applied to reduce the influence of extreme observations.
+
+#### Feature Scaling
+
+In this analysis the selected predictors are all measured on the same scale, ranging from 0 to 100. Because the variables already share a consistent numeric range, additional feature scaling is not required. While scaling could still be applied without negatively affecting the model, it is unlikely to significantly improve the performance of linear or polynomial regression in this context.
+
+## Predictors
+
+At the end of EDA, we have selected the following features as the best predictor candidates:
+
+a) *skill_fk_accuracy*
+b) *shooting*
+c) *attacking_short_passing*
+d) *attacking_heading_accuracy*
+e) **atacking_crossing*
+
+The reasons behind choosing these predictors were the small collinearity among them and relatively strong correlation with the target variable. Apart from that, the predictors share a consistent numeric range (0–100), which reduces the need for feature scaling.  A technique like *log_scale* reduces the influence of extreme values which were detected for some predictors.
+
+
+## Choosing a Regression Model
+
+Poisson regression can be ruled out because it is designed for modeling count data, whereas the target variable (value_eur) is continuous.
+
+The decision between linear regression and polynomial regression depends on the functional relationship between the predictors and the response variable. Scatterplots of the predictors against value_eur revealed visible curvature for several predictors, suggesting that a simple linear model may not fully capture the underlying relationship.
+
+To verify this observation, both linear and polynomial regression models were fitted and compared using the Akaike Information Criterion (AIC).
+
+```{r}
+model_linear <- lm(value_eur ~ attacking_short_passing + shooting +
+                   attacking_crossing + attacking_heading_accuracy,
+                   data = players_eda)
+
+model_poly <- lm(value_eur ~ poly(attacking_short_passing, 2) +
+                 poly(shooting, 2) +
+                 poly(attacking_crossing, 2) +
+                 poly(attacking_heading_accuracy, 2),
+                 data = players_eda)
+
+AIC(model_linear, model_poly)
+```
+
+The model with the lower AIC value is considered to provide a better balance between model fit and model complexity. The results indicate that the polynomial regression model provides a better fit, supporting the earlier visual observations from the scatterplots.
+
+Therefore, polynomial regression was selected as the final model for predicting value_eur using the selected skill-based predictors.

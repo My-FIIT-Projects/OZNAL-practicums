@@ -111,3 +111,9 @@ cat("Release Clause\n")
 summary(players$`Release Clause`)
 
 ```
+### Removing newlines
+
+```{r}
+players <- players %>%
+  mutate(across(where(is.character), ~ gsub("\n", " ", .)))
+```

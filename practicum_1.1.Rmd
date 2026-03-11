@@ -33,6 +33,8 @@ Note that the `echo = FALSE` parameter was added to the code chunk to prevent pr
 ## Conflicts
 
 ```{r}
+library(conflicted)
+
 conflict_prefer("filter", "dplyr")
 conflict_prefer("lag", "dplyr")
 conflict_prefer("intersect", "dplyr")
@@ -64,9 +66,11 @@ players <- read_csv("data/players_22.csv")
 
 ```{r}
 dim(players)
-nrow(players)
-ncol(players)
 ```
+
+\
+
+nrow(players) ncol(players)
 
 #### Check if Data is labeled or unlabeled
 
@@ -97,7 +101,7 @@ Both Matrix and Array require homogenous data. In previous section we found out 
 # sapply -> iterates over players' columns and applies class function
 # class determines the type of an object
 
-sapply(players, class)
+table(sapply(players, class))
 
 ```
 
@@ -158,7 +162,7 @@ R has no direct built-in function for this. We can, however, simply transpose th
 ```{r}
 
 #sum(duplicated(as.list(players)))
-sum(duplicated((t(players))))
+sum(duplicated(t(players)))
 
 # other solution
 # convert players into list, which is a collections of columns
@@ -240,7 +244,7 @@ The second half of the dataset consists of columns representing the more detaile
 1.  **Identifiers & metadata** (sofifa_id, long_name, short_name, age)
 2.  **Categorical descriptive info** (nationality, club_name, club_position, etc.)
 3.  **Numeric performance metrics** (overall, potential, pace, dribbling, etc.)
-4. **High-cardinality or non-informative columns** (we can also remove them completely)
+4.  **High-cardinality or non-informative columns** (we can also remove them completely)
 
 ### Task 8
 
@@ -305,7 +309,7 @@ overall_avg
 youngest_elite_player <- players %>%
   select(short_name, overall, dob) %>%
   filter(overall >= 80) %>%
-  arrange(dob) %>%
+  arrange(desc(dob)) %>%
   head(1)
 
 youngest_elite_player
