@@ -40,6 +40,8 @@ selected_predictors <- c('attacking_heading_accuracy', 'attacking_short_passing'
 extra_columns <- c('player_positions')
 
 target <- c('value_eur')
+# target <- c('value_log')
+
 
 columns <- append(selected_predictors, target)
 columns <- append(columns, extra_columns)
@@ -47,6 +49,7 @@ columns <- append(columns, extra_columns)
 players_eda <- players[columns]
 
 ```
+
 
 ### Missing Values
 
@@ -77,6 +80,13 @@ players_eda <- players_eda %>%
   separate_rows(player_positions, sep = ", ") %>%
   filter(player_positions %in% positions)
 
+players_eda <- players_eda %>%
+  mutate(position_group = case_when(
+    player_positions %in% offense ~ 'Offense',
+    player_positions %in% defense ~ 'Defense',
+    TRUE ~ 'Other'
+  ))
+
 row_after <- nrow(players_eda)
 # 4. Check the difference
 rows_removed <- row_before - row_after
@@ -96,15 +106,21 @@ plots <- map(selected_predictors, function(var) {
       y = "Density"
     )
 })
-library(patchwork)
-
 
 wrap_plots(plots)
-
 ```
 
 
 ### Outliers
+
+#### Log Scale
+
+```{r}
+
+players_eda$value_log <- log(players_eda$value_eur)
+target <- 'value_log'
+
+```
 
 #### Univariate
 
@@ -216,14 +232,15 @@ The decision between linear regression and polynomial regression depends on the 
 To verify this observation, both linear and polynomial regression models were fitted and compared using the Akaike Information Criterion (AIC).
 
 ```{r}
-model_linear <- lm(value_eur ~ attacking_short_passing + shooting +
+model_linear <- lm(value_log ~ attacking_short_passing + shooting +
                    attacking_crossing + attacking_heading_accuracy,
                    data = players_eda)
 
-model_poly <- lm(value_eur ~ poly(attacking_short_passing, 2) +
+model_poly <- lm(value_log ~ poly(attacking_short_passing, 2) +
                  poly(shooting, 2) +
                  poly(attacking_crossing, 2) +
-                 poly(attacking_heading_accuracy, 2),
+                 poly(attacking_heading_accuracy, 2) +
+                 poly(skill_fk_accuracy, 2),
                  data = players_eda)
 
 AIC(model_linear, model_poly)
