@@ -101,6 +101,19 @@ added
 rm(list = ls())
 ```
 
+## Data Science concepts
+
+### Data Manipulation
+- Filtering, aggregation, transformations, etc.
+
+### Data Analysis
+
+
+### Data Visualization
+- Representing data graphically
+- Undestanding patterns, communicating results
+
+
 ## Modern libraries
 
 1)  **tidyverse** - data manipulation, visualization and transformation, built around tibbles, verbs from dplyr, the layered grammar of ggplot2, powerful functional programming of purr.
@@ -163,3 +176,110 @@ This step involves applying statistical and analytical techniques to the data to
 - **R Markdown** allows you to combine R code, plots, and narrative text in a single file. You can easily generate reports, presentations, and dashboards. R Markdown is well integrated within R studio.
 
 - **Shiny** is an R package that lets you create web applications with interactive user interfaces. You can embed Shiny apps directly into R Markdown documents, making them even more interactive. Interactive documents ensure reproducibility by capturing both code and results. Readers can explore data, modify parameters, and see immediate updates in visualizations.
+
+## Factors
+
+```{r}
+f <- factor(c("Hot", "Hot", "Cold", "Lukewarm"))
+```
+
+### Levels
+
+```{r}
+levels(f)
+
+```
+
+### Ordered
+
+```{r}
+ordered(f, levels = c("Cold", "Lukewarm", "Hot"))
+```
+```{r}
+table(f)
+```
+```{r}
+summary(c("one", "two", "three"))
+
+```
+
+## R Collections
+
+### Atomic Vectors (homogenous)
+All elements must be the same type:
+
+numeric, integer, character, logical, etc.
+
+```{r}
+c(1,2,3) # numeric vector
+c("a", "b") # character vector
+```
+
+### Lists (heterogenous vectors)
+
+A list is a vector, but:
+  - elements can be anything (including other lists, recursion)
+
+```{r}
+test_list <- list(1, "a", TRUE, c(1,2,3))
+class(test_list)
+
+# this wont work, list is still a 1D vector
+#colnames(test_list) <- c("la", "ba", "da", "ha")
+# we can only provide names similarly to vectors
+names(test_list)
+```
+
+### Arrays
+Adding dimensions to vectors.
+
+```{r}
+x <- 1:12
+dim(x) <- c(2,3,2)
+class(x)
+typeof(x)
+```
+### Data frame
+
+A data frame is not an array, but it is a list of equal-length vectors:
+
+```{r}
+df <- data.frame(
+  A = c(1,2,3),
+  B = c("x", "y", "z")
+)
+```
+
+So:
+
+- Each column = a vector
+- Columns can have different types
+
+- All columns must have same length
+
+👉 That’s why:
+
+- df$A works (list behavior)
+- df[ , ] works (matrix-like behavior)
+
+### Tibble
+A tibble (from tidyverse) is a data frame with stricter and nicer behavior
+
+Key differences:
+
+- Never changes types silently
+- Better printing
+- Safer subsetting
+
+But internally:
+✔️ Still a list of vectors
+
+### Hierarchy Overview
+
+               vector (base type)
+               /      \
+      atomic vector    list (generic vector)
+           |              |
+        array         data.frame
+           |              |
+        matrix         tibble

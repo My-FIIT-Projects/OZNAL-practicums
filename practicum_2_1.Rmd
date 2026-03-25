@@ -149,7 +149,7 @@ pairs(
 )
 ```
 
-
+### Linearity
 
 ```{r}
 # Generate scatterplots of predictors vs target

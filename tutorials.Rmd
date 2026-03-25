@@ -3,3 +3,679 @@ title: "tutorials"
 output: html_document
 ---
 
+## Atomic Vectors
+
+### Task 1
+
+Create a vector x containing elements 1 through 10. Now, apply the dim() function to x.
+
+```{r}
+
+vec <- 1:10
+dim(vec)
+
+```
+
+This returns NULL because dim is specifically designed for objects with more than one dimension, such as matrices or arrays.
+
+```{r}
+x <- 1:10 ; mean(x); x[2] <- NA ; mean(x)  
+mean(x, na.rm = TRUE)
+
+```
+
+## Rectangular Data
+
+### Task 1
+
+Create an atomic vector x by concatenating integers 1 to 8. Use the following code, or come with your own solution.
+
+```{r}
+x <- 1:8; x
+
+```
+
+```{r}
+attributes(x)
+rownames(x)
+colnames(x)
+```
+
+### Task 5
+
+```{r}
+l <- list()
+
+for (i in 1:3) {
+  l[[i]] <- rnorm(n = 3, mean = i, sd = 0.5)
+}
+
+m <- matrix(nrow = 0, ncol = 3, byrow = TRUE)
+
+for (vec in l) {
+  m <- rbind(m, vec)
+}
+
+m
+```
+
+### Task 6
+
+```{r}
+
+test <- c(5,6)
+
+typeof(test)
+
+typeof(m)
+class(m)
+```
+
+### Task 7
+
+```{r}
+dim(m) <- NULL
+m
+class(m)
+typeof(m)
+```
+
+### Task 8
+
+```{r}
+
+a <- array(m, dim = c(2, 3))
+a
+
+class(a)
+```
+
+```{r}
+
+set.seed(123)
+
+# Build an empty matrix with 3 columns and no rows. 
+m <- matrix(nrow = 0, ncol = 3, byrow = TRUE) 
+
+# Fill an empty matrix with randomly generated triplets.
+for (i in 1:3) m <- rbind(m, rnorm(n = 3, mean = i, sd = 0.5))
+
+# Name rows and columns.
+colnames(m) <- c("Alpha", "Beta", "Gamma")
+rownames(m) <- c("Alpha", "Beta", "Gamma") ; m
+
+class(m)
+typeof(m)
+
+dim(m) <- NULL
+
+class(m)
+
+m_as_array <- array(m, dim = c(2,3))
+
+class(m_as_array)
+```
+
+```{r}
+
+test_vec <- c(1,2,3)
+
+colnames(test_vec) <- c("bullshit", "piča", "kokot")
+
+length(test_vec)
+names(test_vec)
+```
+
+## Subsetting
+
+```{r}
+
+m[1,(2:3)]
+
+```
+
+```{r}
+List1 <- list(list(1, 2), c(3, 4))
+List1
+List2 <- c(list(1, 2), c(3, 4))
+class(List2)
+
+```
+
+unlist(
+
+## 2D Data
+
+## Recursive Vectors & Data Frames
+
+#### Task 3
+
+Here List1 contains recursive lists and List2 is created because atomic vectors cannot hold other collections.
+
+```{r}
+List1 <- list(list(1, 2), c(3, 4))
+List1
+class(List1)
+List2 <- c(list(1, 2), c(3, 4))
+class(List2)
+
+```
+
+#### Task 4
+
+In R, both **atomic vectors** and **lists** are technically "vectors," but they serve very different purposes based on how they handle data types and memory.
+
+##### Similarities
+
+-   Both are vectors
+
+-   We can use [] for indexing
+
+-   Both can have names for their elements, as well as other attributes like dim or class
+
+-   Both have a lenth()
+
+##### Differences
+
+-   Homegeneity vs heterogeneity
+
+-   Vectors are flat (a simple sequence of values) and lists are recursive
+
+-   Vector's coercion forces all elements to the most flexible type (c(1, "a") -\> "1", "a") whilsts lists keep all elements in their original form.
+
+##### Where c() will work and list() wont
+
+```{r}
+# Using c() - This works!
+x <- c(10, 20, 30)
+x + 1 
+# Result: 11, 21, 31
+
+# Using list() - This fails!
+y <- list(10, 20, 30)
+y + 1
+# Result: Error in y + 1 : non-numeric argument to binary operator
+```
+
+#### Task 5
+
+```{r}
+
+unlistedList1 <- unlist(List1)
+unlistedList1
+
+unlistedList2 <- unlist(List2)
+unlistedList2
+```
+
+#### Task 6
+
+```{r}
+List3 <- list(list(list(1)))
+str(List3)
+
+```
+
+#### Task 7
+
+The most important list application in R is a data frame. A data frame contains list of column-bound vectors which can have attributes. In contrast to a regular list, a data frame has an additional constraint: the length of each of its vectors must be the same. This gives data frames their rectangular structure and explains why they share some properties with matrices.
+
+#### Modifying a column vs row
+
+-   R raplaces the original column with the new one (copy-on-modify)
+
+-   When modifying a row R needs to replace every column vector
+
+-   This is because data frames are column-oriented structures oriented for column operations.
+
+#### Subsetting
+
+🔹 [ → slicing / subsetting
+
+Returns the same type of container
+
+Just with fewer elements
+
+🔹 [[ → extraction
+
+Returns the actual element inside
+
+Removes one level of structure
+
+```{r}
+
+Players <- list(Offense = data.frame(Position = c('Striker', 'Left Winger'), Wage = c(2.1, 0.49)),
+                Midfielders = data.frame(Position = c('Center', 'Right Midfielder'), Wage = c(2.18, 3.89)),
+                Defense = data.frame(Position = c('Goal Keeper', 'Right Center Back'), Wage = c(0.99, 0.69)))
+
+class(Players)
+
+
+```
+
+##### Using [ vs [[
+
+```{r}
+
+class(Players[1])
+Players[1]
+
+class(Players[[1]])
+Players[[1]]
+```
+
+##### \$ shorthand
+
+An alternative way of doing the same thing is using the dollar sign operator $, which is a shorthand operator: x$y is roughly equivalent to x[["y"]]. It’s often used to access variables in a data frame, which has named columns.
+
+The one important difference between \$ and [[]] is that \$ does (left-to-right) partial matching, as shown below:
+
+```{r}
+Players$Off # Off is partially matched to Offense, which is returned.
+```
+
+## Loading data into R
+
+### Libs
+
+```{r}
+library(tidyverse)
+library(readr)
+
+```
+
+### Task 1
+
+```{r}
+# pattern = "player" tells list.files() to return only filenames that contain "player" anywhere in the name.
+list.files("./data/original", include.dirs = FALSE, pattern = "player")
+```
+
+### Loading data
+
+```{r}
+data_tibble <- read_csv("./data/original/players_22.csv")
+data_df <- read.csv("./data/original/players_22.csv")
+str(data_tibble)
+```
+
+### Task 2 - read.csv vs read_csv
+
+| Feature | `read.csv()` (base R) | `read_csv()` (readr) |
+|------------------|------------------------|------------------------------|
+| **Package** | Base R (no install needed) | readr (tidyverse) |
+| **Speed** | Slower (especially large files) | Much faster |
+| **Return type** | `data.frame` | `tibble` (modern data frame) |
+| **Strings handling** | Converts to factors by default *(older R)* | Always keeps as character |
+| **Missing values** | Recognizes `NA` and empty strings (`""`) | Recognizes `NA`, `""`, and more (e.g. `"N/A"`, `"NULL"`) |
+| **Type inference** | Less consistent, sometimes guesses poorly | Strong, consistent type guessing |
+| **Column types** | Often converts text → factor | Keeps text as character unless specified |
+| **Printing** | Prints entire data frame | Prints preview (cleaner) |
+| **Column parsing feedback** | No messages | Shows parsing info + problems |
+| **Error handling** | Silent failures possible | Explicit warnings and diagnostics |
+
+### Task 3
+
+```{r}
+getwd()
+df <- read_csv("./data/original/players_22.csv", col_names = FALSE)
+colnames(df)
+```
+
+### Task 4
+
+Here t() transposes data frame and changes colnames -\> rownames
+
+```{r}
+
+transposed <- t(data_df)
+
+colnames(transposed)
+rownames(transposed)
+```
+
+### Task 5 - Combining data franes
+
+`rbind()` stacks data **row-wise** (one dataset under the other)
+
+This works **only if both datasets have the same columns** (which FIFA datasets typically do)
+
+```{r}
+
+players_21 <- read_csv("./data/original/players_21.csv")
+players_22 <- read_csv("./data/original/players_22.csv")
+
+players_all <- rbind(players_21, players_22)
+
+str(players_all)
+```
+
+### Task 6
+
+```{r}
+
+players_22_selected <- read_csv("./data/original/players_22.csv", col_select = c(short_name, contains("skill"), contains("id")))
+```
+
+### Task 7 - NA filtering
+
+```{r}
+
+players_22_selected <- read_csv("./data/original/players_22.csv", na = c('', "NA"))
+
+```
+
+### Slice
+
+```{r}
+
+slice(data_tibble, c(1:3), overall > 90)
+
+```
+
+## Functions
+
+### Libs
+
+```{r}
+
+
+
+```
+
+### Task 1
+
+in R:
+
+### 1. Functions are **first-class objects**
+
+They don’t inherently store their “name”.
+
+test_func is just a pointer to the function and there can be more pointers pointing to the same function object.
+
+```{r}
+
+
+test_func <- function(x, y) {
+  return(x + y)
+}
+
+match.fun("test_func")
+y <- c(5)
+primitive <- 5
+```
+
+### Task 2
+
+```{r}
+
+is.function(y)
+is.primitive(y)
+
+```
+
+```{r}
+
+is.function(y)
+is.primitive(primitive)
+```
+
+### Default Arguments
+
+```{r}
+
+greet <- function(name, greeting = "Fuck you"){
+  return(paste(greeting, name))
+}
+
+message1 <- greet("alice")
+print(message1)
+
+```
+
+### Task 3
+
+R uses **lexical scoping**, so when you redefine a function name, you **mask (override)** the original function in the current environment.
+
+```{r}
+
+mean <- function(x){
+  return("pica")
+}
+
+mean(1:5)
+
+#You can still access it explicitly:
+base::mean(1:5)
+```
+
+### Task 4
+
+```{r}
+
+sum(c(1, 2, 3))
+mean(c(1, 2, 3))
+
+sum(1, 2, 3, na.omit = TRUE) 
+mean(1, 2, 3, na.omit = TRUE)
+```
+
+### Task 5
+
+```{r}
+f <- function(abcdef, bcde1, bcde2) {   
+  list(a = abcdef, b1 = bcde1, b2 = bcde2) 
+}
+str(f(1, 2, 3)) 
+str(f(2, 3, abcdef = 1)) 
+str(f(2, 3, a = 1))
+
+```
+
+### Task 6
+
+```{r}
+
+data_frame_setup <- function(...){
+  return(
+    data.frame(
+      ...
+    )
+  )
+}
+
+a <- 1:10 
+b <- 2:11  
+c <- 3:12
+
+data_frame <- data_frame_setup(a, b, c)
+
+str(data_frame)
+
+data_frame$a
+```
+
+### Task 7
+
+No, anonymous functions can taky any number of arguments.
+
+### Task 8
+
+Here we nest an anonymous function inside named function apply_multiplier and pass it to the sapply() function.
+
+```{r}
+apply_multiplier <- function(x, factor) {
+  sapply(x, function(y) y * factor)
+}
+
+apply_multiplier(1:5, 4)
+```
+
+## Lexical Scoping
+
+## A Grammar of Data Manipulation
+
+### Libs
+
+```{r}
+
+library(tidyverse)
+library(readr)
+library(dplyr)
+
+```
+
+### Task 1
+
+**Longitudinal**: same players are analyzed across a certain period of time (2019-2022)
+
+**cross-sectional**: each file only collects data from a single point in time
+
+### Task 2
+
+```{r}
+
+players_22 <- read_csv("./data/original/players_22.csv")
+
+```
+
+```{r}
+# files <- paste0("players_", 15:22, ".csv")
+# 
+# # gsub(pattern, replacement, x)
+# # sub - only first match, gsub all
+# # pattern → regex pattern to search for
+# # replacement → string to replace it with
+# # x → character vector
+# 
+# # "players_|\\.csv" → the | means “or” in regex
+# 
+# # \\. escaped dot, because . is special in regex
+# 
+# # Replaces "players_" or ".csv" with "" (nothing)
+# all_players <- bind_rows(
+#   lapply(files, function(f) {
+#     read_csv(paste0("./data/original/", f)) %>%
+#       mutate(season = as.integer(gsub("players_|\\.csv", "", f)))
+#   })
+# )
+```
+
+### Task 3
+
+```{r}
+
+nrow(players_22)
+ncol(players_22)
+
+table(sapply(players_22, class))
+
+```
+
+### Task 4
+
+```{r}
+View(players_22)
+skill_colls <- function(data_frame, player_name){
+  return(
+    data_frame %>% filter(short_name == player_name) %>% select(starts_with("skill"), ends_with("ing"))
+  )
+}
+
+
+skill_colls(players_22, "L. Messi")
+```
+
+### Task 5
+
+```{r}
+
+data %>%
+  mutate(
+    across(starts_with("skill_"),
+           ~ .x - median(.x, na.rm = TRUE),
+           .names = "{.col}_mednorm"
+    )
+  )
+```
+
+### Task 7
+
+```{r}
+
+data_normalized <- data %>%
+  select(short_name, dob, skill_dribbling) %>%
+  filter(short_name %in% c("R. Lewandowski", "Cristiano Ronaldo", "Neymar Jr")) %>%
+  mutate(skill_dribbling = skill_dribbling - median(skill_dribbling, na.rm = TRUE))
+```
+
+### Task 8
+
+#### Without replacement
+
+-   Once picked the element cannot be picked again
+
+```{r}
+sampled_rows <- players_22 %>%
+  sample(n = 1000)
+```
+
+#### With replacement
+
+-   Can be picked multiple times
+
+```{r}
+samples_rows <- players_22 %>%
+  sample(n=1000, replace = TRUE)
+```
+
+## Data Summaries
+
+### Summary
+
+```{r}
+
+data %>% 
+  select(short_name, dob, skill_dribbling, league_level) %>%
+  summarise(mean_dribbling = mean(skill_dribbling),
+            min_dribbling = min(skill_dribbling),
+            max_dribbling = max(skill_dribbling),
+            number_of_records = n())
+```
+
+### Task 1
+
+```{r}
+players_summary <- players_22 %>%
+  select(where(is.numeric)) %>%
+  summarise(
+    across(
+      starts_with("skill_"),
+      list(
+        mean = ~ mean(.x, na.rm = TRUE),
+        min  = ~ min(.x, na.rm = TRUE),
+        max  = ~ max(.x, na.rm = TRUE)
+      ),
+      .names = "{.col}_{.fn}"
+    ),
+    number_of_records = n()
+  )
+players_summary
+
+```
+
+### Task 5
+
+```{r}
+
+data_sorted <- data[order(data$overall), ]
+```
+
+## Data Tidying
+
+### Task 1
+
+```{r}
+setwd("C:/Users/fmojt/DataScience/OZNAL_practicums/data/original")
+
+```
